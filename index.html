@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="SalesBot AI - Intelligent Audio Sales Assistant powered by ChatGPT. Experience advanced audio interactions, voice commands, and real-time analytics to transform your sales process.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SalesBot AI - Intelligent Audio Sales Assistant</title>
+
+  <!-- Open Graph Tags -->
+  <meta property="og:title" content="SalesBot AI">
+  <meta property="og:description" content="Transform your sales with intelligent audio interactions.">
+  <meta property="og:type" content="website">
+
+  <!-- AOS CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <!-- Wavesurfer.js -->
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #4b95dd;
+      --secondary-color: #19c37d;
+      --background: #121212;
+      --surface: #1e1e1e;
+      --text-color: #f5f5f5;
+      --text-muted: #b0b0b0;
+      --footer-bg: #1a1a1a;
+      --shadow: rgba(0,0,0,0.2);
+    }
+    /* … all your existing CSS rules above … */
+
+    /* Chat window & bubbles */
+    #chat {
+      height: 600px;
+      overflow-y: auto;
+      padding: 20px;
+      background-color: var(--surface);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>…your existing header/nav…</header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero" id="home">…</section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">…</section>
+
+    <!-- Chatbot Demo Section (UPDATED) -->
+    <section class="chatbot-demo" id="chatbot" data-aos="fade-up">
+      <div class="container">
+        <div class="chatbot-info">
+          <h2>Interactive Chatbot Demo</h2>
+          <p>No login required—powered by our serverless API and saved in your browser.</p>
+        </div>
+
+        <!-- 1) Chat window -->
+        <div id="chat"></div>
+
+        <!-- 2) Input form -->
+        <form id="inputForm" style="display:flex; gap:8px; margin-top:20px;">
+          <input
+            id="userInput"
+            type="text"
+            placeholder="Type your message…"
+            autocomplete="off"
+            style="flex:1; padding:12px; border-radius:4px; border:1px solid #444; background:#1e1e1e; color:#f5f5f5;"
+          />
+          <button
+            type="submit"
+            style="padding:12px 24px; background:var(--primary-color); color:#fff; border:none; border-radius:4px;"
+          >
+            Send
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>…your existing footer…</footer>
+
+  <!-- Third‑party scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script> particlesJS("particles-js", { /* …your particles config… */ }); </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script> AOS.init({ duration:1000, easing:'ease-in-out', once:true }); </script>
+  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+  <script>
+    new Typed('#typed', {
+      strings: ["Transform Your Sales with Intelligent Audio Interactions","Experience Advanced Chatbot Capabilities"],
+      typeSpeed:60, backSpeed:30, loop:true
+    });
+  </script>
+
+  <!-- ===== Chat Widget Logic ===== -->
+  <script>
+    const chatEl  = document.getElementById("chat");
+    const form    = document.getElementById("inputForm");
+    const input   = document.getElementById("userInput");
+
+    // 1) Load history from localStorage
+    let history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+    history.forEach(msg => appendMessage(msg.role, msg.content));
+
+    function appendMessage(role, text) {
+      const bubble = document.createElement("div");
+      bubble.textContent = text;
+      Object.assign(bubble.style, {
+        padding: '10px',
+        borderRadius: '6px',
+        maxWidth: '75%',
+        alignSelf: role === 'user' ? 'flex-end' : 'flex-start',
+        background: role === 'user' ? 'var(--primary-color)' : '#2a2a2a',
+        color: role === 'user' ? '#000' : '#f5f5f5'
+      });
+      chatEl.appendChild(bubble);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const content = input.value.trim();
+      if (!content) return;
+
+      // show user message
+      appendMessage("user", content);
+      history.push({ role: "user", content });
+
+      // send to serverless API
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history })
+        });
+        const { reply, error } = await res.json();
+        if (error) throw new Error(error);
+
+        // show bot reply
+        appendMessage("bot", reply.content);
+        history.push(reply);
+      } catch (err) {
+        appendMessage("bot", `⚠️ ${err.message}`);
+      }
+
+      // persist history
+      localStorage.setItem("chatHistory", JSON.stringify(history));
+      input.value = "";
+    });
+  </script>
+</body>
+</html>
